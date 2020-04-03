@@ -68,10 +68,6 @@ pub fn main() {
         data.insert::<ShardManagerContainer>(Arc::clone(&client.shard_manager));
     }
 
-    // let mut owners = HashSet::new();
-    // owners.insert(dotenv!("CANARADO").to_string());
-    // let bot_id = dotenv!("CURRENT_BOT_ID").to_string();
-
     let (owners, bot_id) = match client.cache_and_http.http.get_current_application_info() {
         Ok(info) => {
             let mut owners = HashSet::new();

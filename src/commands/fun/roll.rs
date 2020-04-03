@@ -25,9 +25,6 @@ pub fn roll(context: &mut Context, message: &Message, mut args: Args) -> Command
         return Ok(());
     }
 
-    // let c_args = args.raw().collect::<Vec<&str>>();
-    // let dice = &c_args[0].as_u64();
-    // let sides = &c_args[1].as_u64();
     let mut dice = args.single::<u32>().unwrap();
     let mut sides = args.single::<u32>().unwrap();
 
@@ -57,12 +54,9 @@ pub fn roll(context: &mut Context, message: &Message, mut args: Args) -> Command
         results.push(((rand::random::<f64>() * (sides as f64)) + 1 as f64).floor());
     }
 
-    // let c_reg = Regex::new(",(?=[^,]*$)").unwrap();
     let c_reg = Regex::new("(.*), (.*)").unwrap();
 
-    // &results.into_iter().map(|i| i.to_string()).collect::<String>()
     let mut result = &results.into_iter().map(|i| i.to_string()).collect::<Vec<String>>().join(", ");
-    // let result = result.replace(",(?=[^,]*$)", " and");
 
     let result = c_reg.replace(&result, "$1 and $2");
 
