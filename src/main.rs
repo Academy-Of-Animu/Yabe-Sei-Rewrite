@@ -1,9 +1,12 @@
-#![allow(unused_imports, unused_variables, unused_mut, unused_attributes)]
+#![allow(unused_imports, unused_variables, unused_mut, unused_attributes, unused_parens,)]
 
 mod util;
 mod listeners;
+mod commands;
 
 // command imports
+use commands::fun::roll::*;
+use commands::util::help::*;
 
 use serenity::{
     client::{
@@ -50,6 +53,10 @@ impl TypeMapKey for ShardManagerContainer {
 }
 
 // command structs
+#[group]
+#[description = "Fun commands."]
+#[commands(roll)]
+struct Fun;
 
 pub fn main() {
     let token = dotenv!("TOKEN");
@@ -87,6 +94,8 @@ pub fn main() {
                 .owners(owners)
                 .dynamic_prefix(|_, message| {
                     let default = "yabe".to_string();
+
+                    if dotenv!("PROD") == "1" { return Some("yabedev".to_string());};
 
                     if let Some(guild_id) = message.guild_id {
                         Some(get_prefix(guild_id).map_or_else(|_| default, |prefix| prefix))
@@ -140,7 +149,8 @@ pub fn main() {
                     error!("Encountered issue while running {} command\nUser: {}\nE: {:?}", command_name, message.author.tag(), e);
                 }
             })
-            // .help(&HELP)
+            .help(&HELP)
+            .group(&FUN_GROUP)
 
     );
 
