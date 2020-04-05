@@ -5,7 +5,7 @@ mod listeners;
 mod commands;
 
 // command imports
-use commands::fun::roll::*;
+use commands::fun::fun::*;
 use commands::util::help::*;
 
 use serenity::{
@@ -55,7 +55,7 @@ impl TypeMapKey for ShardManagerContainer {
 // command structs
 #[group]
 #[description = "Fun commands."]
-#[commands(roll)]
+#[commands(roll, owofy)]
 struct Fun;
 
 pub fn main() {

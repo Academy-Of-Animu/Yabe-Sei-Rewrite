@@ -68,3 +68,41 @@ pub fn roll(context: &mut Context, message: &Message, mut args: Args) -> Command
     })?;
     Ok(())
 }
+
+#[command]
+#[description = "The `owofy` command takes text and owofies it! Just try it out and you'll get the gist of it."]
+#[usage = "<text to put through owofication process"]
+pub fn owofy(context: &mut Context, message: &Message, args: Args) -> CommandResult {
+
+    if args.rest().is_empty() {
+        message.channel_id.send_message(&context, |msg| {
+            msg.embed(|e| {
+                e.description("I can't owo-fy an empty message! uwu");
+                e.color(0x1355A4)
+            })
+        })?;
+        return Ok(());
+    }
+
+    let mut sentence = args.raw().collect::<Vec<&str>>().join(" ");
+    let faces = vec!["(・`ω´・)",";;w;;","owo","UwU",">w<","^w^"];
+
+    sentence = sentence
+        .replace("[lr]", "w")
+        .replace("(?:r|l)", "w")
+        .replace("(?:R|L)", "W")
+        .replace("n([aeiou])", "ny$1")
+        .replace("N([aeiou])", "Ny$1")
+        .replace("N([AEIOU])", "NY$1")
+        .replace("ove", "uv")
+        .replace("!+", &(format!(" {} ", faces[(rand::random::<f64>() * faces.len() as f64).floor() as usize])));
+
+    message.channel_id.send_message(&context, |msg| {
+        msg.embed(|e| {
+            e.description(&sentence);
+            e.color(0x1355A4)
+        })
+    })?;
+
+    Ok(())
+}

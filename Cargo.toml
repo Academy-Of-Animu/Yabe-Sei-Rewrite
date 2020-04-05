@@ -4,10 +4,8 @@ version = "0.1.0"
 authors = ["Adam Kerik <ajkerik@gmail.com>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-serenity = "0.8.1"
+serenity = {git = "https://github.com/serenity-rs/serenity.git", branch = "next"}
 serde = { version = "1.0.104", features = ["derive"] }
 serde_json = "1.0.48"
 lazy_static = "1.4.0"
