@@ -1,7 +1,7 @@
 [package]
 name = "yabe_rust"
 version = "0.1.0"
-authors = ["Adam Kerik <ajkerik@gmail.com>"]
+authors = ["Adam K. <canarado.dev@gmail.com>"]
 edition = "2018"
 
 [dependencies]
