@@ -9,6 +9,7 @@ use serenity::{
 };
 
 use rand;
+use rand::Rng;
 use regex::Regex;
 
 #[command]
@@ -113,4 +114,82 @@ pub fn owofy(context: &mut Context, message: &Message, args: Args) -> CommandRes
     })?;
 
     Ok(())
+}
+
+// TODO: refactor for negative number exceptions
+#[command]
+#[description = "Flips a coin (or coins)"]
+#[usage = "<number of coins> (leave empty for one coin"]
+pub fn flip(context: &mut Context, message: &Message, mut args: Args) -> CommandResult {
+    if args.rest().is_empty() {
+
+        let random = (rand::thread_rng().gen_range(1, 3) as f64).floor();
+        let mut coin_side = String::with_capacity(6);
+
+        println!("{}", random);
+
+        if random as u8 == 1 {
+            coin_side.push_str("Heads!");
+        } else {
+            coin_side.push_str("Tails!");
+        }
+
+        message.channel_id.send_message(&context, |msg| {
+            msg.embed(|e| {
+                e.description(&coin_side);
+                e.color(0x1355A4)
+            })
+        })?;
+
+        return Ok(());
+    }
+
+    let coins = args.single::<u32>().unwrap();
+
+    if coins < 1 || coins > 10 {
+        message.channel_id.send_message(&context, |msg| {
+            msg.embed(|e| {
+                e.description("Please enter a number between 1 and 10 (inclusive)");
+                e.color(0x1355A4)
+            })
+        })?;
+
+        return Ok(());
+    } else {
+        let mut heads_count = 0;
+        let mut tails_count = 0;
+
+        let mut coin_history: Vec<&str> = Vec::new();
+
+        for i in 0..coins {
+            let random = (rand::thread_rng().gen_range(1, 3) as f64).floor() as u32;
+
+            if random as u8 == 1 {
+                coin_history.push("Heads");
+                heads_count += 1;
+            } else {
+                coin_history.push("Tails");
+                tails_count += 1;
+            }
+        }
+
+        message.channel_id.send_message(&context, |msg| {
+            msg.embed(|e| {
+                e.description(
+                    format!("Results: {}\n\nHeads: {}\nTails: {}",
+                        &coin_history
+                            .into_iter()
+                            .map(|i| i.to_string())
+                            .collect::<Vec<String>>()
+                            .join(", "),
+                        heads_count,
+                        tails_count
+                    )
+                );
+                e.color(0x1355A4)
+            })
+        })?;
+
+        Ok(())
+    }
 }

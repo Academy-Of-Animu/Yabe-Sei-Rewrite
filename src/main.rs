@@ -55,7 +55,7 @@ impl TypeMapKey for ShardManagerContainer {
 // command structs
 #[group]
 #[description = "Fun commands."]
-#[commands(roll, owofy)]
+#[commands(roll, owofy, flip)]
 struct Fun;
 
 pub fn main() {
@@ -152,5 +152,19 @@ pub fn main() {
 
     if let Err(e) = client.start_autosharded() {
         error!("Could not run the client: {:?}", e);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use rand::Rng;
+
+    #[test]
+    fn gen_range() {
+        for _ in 0..10 {
+            let random = (rand::thread_rng().gen_range(1, 3) as f64).floor();
+            println!("{}", random);
+        }
     }
 }
