@@ -5,7 +5,7 @@ authors = ["Adam K. <canarado.dev@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-serenity = {git = "https://github.com/serenity-rs/serenity.git", branch = "next"}
+serenity = { git = "https://github.com/Lakelezz/serenity/", branch = "await" }
 serde = { version = "1.0.104", features = ["derive"] }
 serde_json = "1.0.48"
 lazy_static = "1.4.0"
@@ -15,3 +15,4 @@ log = "0.4.8"
 rusqlite = { version = "0.21.0", features = ["bundled"] }
 rand = "0.7.3"
 regex = "1"
+tokio = "0.2.13"
