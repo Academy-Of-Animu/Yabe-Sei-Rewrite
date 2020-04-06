@@ -95,7 +95,6 @@ pub fn owofy(context: &mut Context, message: &Message, args: Args) -> CommandRes
         (Regex::new("N([aeiou])").unwrap(), "Ny$1"),
         (Regex::new("N([AEIOU])").unwrap(), "NY$1"),
         (Regex::new("ove").unwrap(), "uv"),
-        // (Regex::new("!+").unwrap(), (format!(" {} ", faces[(rand::random::<f64>() * faces.len() as f64).floor() as usize])).as_str()),
     ];
 
     for i in regex_vec {
@@ -106,18 +105,6 @@ pub fn owofy(context: &mut Context, message: &Message, args: Args) -> CommandRes
     let random_face = faces[(rand::random::<f64>() * faces.len() as f64).floor() as usize];
     sentence = format!("{} {}", sentence, random_face);
     
-    // sentence = sentence.push_str(&format!(" {}", faces[(rand::random::<f64>() * faces.len() as f64).floor() as usize])).to_string();
-
-    // sentence = sentence
-    //     .replace("[lr]", "w")
-    //     .replace("(?:r|l)", "w")
-    //     .replace("(?:R|L)", "W")
-    //     .replace("n([aeiou])", "ny$1")
-    //     .replace("N([aeiou])", "Ny$1")
-    //     .replace("N([AEIOU])", "NY$1")
-    //     .replace("ove", "uv")
-    //     .replace("!+", &(format!(" {} ", faces[(rand::random::<f64>() * faces.len() as f64).floor() as usize])));
-
     message.channel_id.send_message(&context, |msg| {
         msg.embed(|e| {
             e.description(&sentence);
