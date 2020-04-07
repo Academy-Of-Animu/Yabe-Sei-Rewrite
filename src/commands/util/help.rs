@@ -21,6 +21,6 @@ use std::collections::HashSet;
 #[max_levenshtein_distance(2)]
 #[no_help_available_text("There is no command available with that name. Please try again.")]
 #[embed_success_colour(DARK_TEAL)]
-fn help(context: &mut Context, message: &Message, args: Args, options: &'static HelpOptions, command_groups: &[&'static CommandGroup], bot_owners: HashSet<UserId>) -> CommandResult {
+async fn help(context: &mut Context, message: &Message, args: Args, options: &'static HelpOptions, command_groups: &[&'static CommandGroup], bot_owners: HashSet<UserId>) -> CommandResult {
     help_commands::with_embeds(context, message, args, &options, command_groups, bot_owners)
 }

@@ -1,4 +1,5 @@
 #![allow(unused_imports, unused_variables, unused_mut, unused_attributes, unused_parens,)]
+#![feature(type_ascription)]
 
 mod util;
 mod listeners;
