@@ -5,6 +5,7 @@ use crate::listeners::events::{
 };
 
 use serenity::{
+    async_trait,
     client::{
         Context, EventHandler,
     },
@@ -16,16 +17,18 @@ use serenity::{
 };
 
 pub struct Handler;
+
+#[async_trait]
 impl EventHandler for Handler {
-    fn message(&self, context: Context, message: Message) {
+    async fn message(&self, context: Context, message: Message) {
         message::message(context, message);
     }
 
-    fn ready(&self, context: Context, ready: Ready) {
+    async fn ready(&self, context: Context, ready: Ready) {
         ready::ready(context, ready);
     }
 
-    fn guild_create(&self, context: Context, guild: Guild, _is_new: bool) {
+    async fn guild_create(&self, context: Context, guild: Guild, _is_new: bool) {
         guild_create::guild_create(context, guild);
     }
 }

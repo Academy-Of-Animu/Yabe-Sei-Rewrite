@@ -1,4 +1,5 @@
-#![allow(unused_imports, unused_variables, unused_mut, unused_attributes, unused_parens,)]
+#![allow(unused_imports, unused_variables, unused_mut, unused_attributes, unused_parens, irrefutable_let_patterns, unused_must_use,)]
+#![feature(type_ascription, box_into_pin)]
 
 mod util;
 mod listeners;
@@ -9,6 +10,7 @@ use commands::fun::fun::*;
 use commands::util::help::*;
 
 use serenity::{
+    http::Http,
     client::{
         Client,
         bridge::gateway::ShardManager,
@@ -20,11 +22,10 @@ use serenity::{
         },
         StandardFramework,
     },
-    prelude::{
-        Mutex,
-        TypeMapKey,
-    }
+    prelude::*
 };
+
+use tokio::sync::Mutex;
 
 use log::error;
 
@@ -58,17 +59,15 @@ impl TypeMapKey for ShardManagerContainer {
 #[commands(roll, owofy, flip)]
 struct Fun;
 
-pub fn main() {
+#[tokio::main]
+pub async fn main() {
     let token = dotenv!("TOKEN");
 
-    let mut client = Client::new(&token, Handler).expect("Coult not create Discord Client!");
+    new_database();
 
-    {
-        let mut data = client.data.write();
-        data.insert::<ShardManagerContainer>(Arc::clone(&client.shard_manager));
-    }
+    let http = Http::new_with_token(&token);
 
-    let (owners, bot_id) = match client.cache_and_http.http.get_current_application_info() {
+    let (owners, bot_id) = match http.get_current_application_info().await {
         Ok(info) => {
             let mut owners = HashSet::new();
             owners.insert(info.owner.id);
@@ -77,80 +76,90 @@ pub fn main() {
         Err(why) => panic!("Couldn't get app info: {:?}", why)
     };
 
-    new_database();
 
-    client.with_framework(
-        StandardFramework::new()
-            .configure(|configuration| {
-               configuration
-                .with_whitespace(true)
-                .ignore_webhooks(true)
-                .case_insensitivity(true)
-                .on_mention(Some(bot_id))
-                .owners(owners)
-                .dynamic_prefix(|_, message| {
-                    let default = "yabe".to_string();
+    let framework = StandardFramework::new()
+    .configure(|configuration| {
+        configuration
+        .with_whitespace(true)
+        .ignore_webhooks(true)
+        .case_insensitivity(true)
+        .on_mention(Some(bot_id))
+        .owners(owners)
+        .dynamic_prefix(|_, message| Box::pin(async move {
+            let default = "yabe".to_string();
 
-                    if dotenv!("PROD") == "1" { return Some("yabedev".to_string());};
+            // if dotenv!("PROD") == "1" { "yabedev".to_string() };
 
-                    if let Some(guild_id) = message.guild_id {
-                        Some(get_prefix(guild_id).map_or_else(|_| default, |prefix| prefix))
-                    } else {
-                        Some(default)
-                    }
+            if dotenv!("PROD") == "0" {
+                return Some("yabedev".to_string());
+            }
+
+            if let guild_id = message.guild_id {
+                Some(get_prefix(guild_id.unwrap()).map_or_else(|_| default, |prefix| prefix))
+            } else {
+                Some(default)
+            }
+        }))
+    })
+    .on_dispatch_error(|context, message, err| Box::pin(async move { match err {
+        DispatchError::Ratelimited(secs) => {
+            let _ = message.channel_id.say(
+                &context,
+                format!(
+                    "You have hit a ratelimit bucket on Discord's end. Please try this \
+                    again in {} seconds.",
+                    secs
+                )
+            );
+        }
+        DispatchError::OnlyForOwners => {
+            let _ = message.channel_id.say(&context, "This command is not available for non-owners of Yabe.");
+        }
+        DispatchError::TooManyArguments { max, given } => {
+            let _ = message.channel_id.send_message(&context, |message| {
+                message.embed(|embed| {
+                    embed.title("Too many arguments.");
+                    embed.description(format!(
+                        "That command requires less arguments! You provided {} arguments, but only {} were needed.",
+                        max, given
+                    ))
                 })
-            })
-            .on_dispatch_error(|context, message, err| match err {
-                DispatchError::Ratelimited(secs) => {
-                    let _ = message.channel_id.say(
-                        &context,
-                        format!(
-                            "You have hit a ratelimit bucket on Discord's end. Please try this \
-                            again in {} seconds.",
-                            secs
-                        )
-                    );
-                }
-                DispatchError::OnlyForOwners => {
-                    let _ = message.channel_id.say(&context, "This command is not available for non-owners of Yabe.");
-                }
-                DispatchError::TooManyArguments { max, given } => {
-                    let _ = message.channel_id.send_message(&context, |message| {
-                        message.embed(|embed| {
-                            embed.title("Too many arguments.");
-                            embed.description(format!(
-                                "That command requires less arguments! You provided {} arguments, but only {} were needed.",
-                                max, given
-                            ))
-                        })
-                    });
-                }
-                DispatchError::NotEnoughArguments { min, given } => {
-                    let _ = message.channel_id.send_message(&context, |message| {
-                        message.embed(|embed| {
-                            embed.title("Not enough arguments.");
-                            embed.description(format!(
-                                "That command requires more arguments! You provided {} arguments, but {} were needed.",
-                                min, given
-                            ))
-                        })
-                    });
-                }
-                DispatchError::IgnoredBot => {}
-                _ => error!("Dispatch Error: {} Failed: {:?}", message.content, err)
-            })
-            .after(|context, message, command_name, err| {
-                if let Err(e) = err {
-                    let _ = message.channel_id.say(&context, "Something went wrong running that command. Try again?");
-                    error!("Encountered issue while running {} command\nUser: {}\nE: {:?}", command_name, message.author.tag(), e);
-                }
-            })
-            .help(&HELP)
-            .group(&FUN_GROUP)
+            });
+        }
+        DispatchError::NotEnoughArguments { min, given } => {
+            let _ = message.channel_id.send_message(&context, |message| {
+                message.embed(|embed| {
+                    embed.title("Not enough arguments.");
+                    embed.description(format!(
+                        "That command requires more arguments! You provided {} arguments, but {} were needed.",
+                        min, given
+                    ))
+                })
+            });
+        }
+        DispatchError::IgnoredBot => {}
+        _ => error!("Dispatch Error: {} Failed: {:?}", message.content, err)
+    }}))
+    .after(|context, message, command_name, err| Box::pin(async move {
+        if let Err(e) = err {
+            let _ = message.channel_id.say(&context, "Something went wrong running that command. Try again?");
+            error!("Encountered issue while running {} command\nUser: {}\nE: {:?}", command_name, message.author.tag(), e);
+        }
+    }))
+    .help(&HELP)
+    .group(&FUN_GROUP);
 
-    );
 
-    if let Err(e) = client.start_autosharded() {
+    let mut client = Client::new_with_framework(&token, Handler, framework)
+    .await
+    .expect("Coult not create Discord Client!");
+
+    {
+        let mut data = client.data.write().await;
+        data.insert::<ShardManagerContainer>(Arc::clone(&client.shard_manager));
+    }
+
+    if let Err(e) = client.start_shards(1).await {
         error!("Could not run the client: {:?}", e);
     }
 }

@@ -8,8 +8,8 @@ use serenity::{
 
 use log::info;
 
-pub fn ready(context: Context, ready: Ready) {
-    let application_info = context.http.get_current_application_info().unwrap();
+pub async fn ready(context: Context, ready: Ready) {
+    let application_info = context.http.get_current_application_info().await;
 
     info!("{} is logged into Discord", ready.user.tag());
     info!("Gateway version {}", ready.version);
