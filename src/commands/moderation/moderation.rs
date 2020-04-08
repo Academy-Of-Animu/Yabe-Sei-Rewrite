@@ -47,7 +47,7 @@ pub async fn ban(context: &mut Context, message: &Message, mut args: Args) -> Co
     if let Some(answer) = message.author.await_reply(&context).timeout(Duration::from_secs(10)).await {
 
         if answer.content.to_lowercase() == "yes" {
-            Ban(reason: String, member_id: u32);
+            //ban user
             message.channel_id.send_message(&context, |msg| {
                 msg.embed(|e| {
                     e.title(format!("User was banned by {}", message.author.name));
