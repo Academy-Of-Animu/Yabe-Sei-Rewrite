@@ -8,6 +8,7 @@ mod commands;
 // command imports
 use commands::fun::fun::*;
 use commands::util::help::*;
+use commands::moderation::moderation::*;
 
 use serenity::{
     http::Http,
@@ -56,8 +57,13 @@ impl TypeMapKey for ShardManagerContainer {
 // command structs
 #[group]
 #[description = "Fun commands."]
-#[commands(roll, owofy, flip)]
+#[commands(roll, owofy, flip, eightball)]
 struct Fun;
+
+#[group]
+#[description = "Moderation commands."]
+#[commands(ban)]
+struct Moderation;
 
 #[tokio::main]
 pub async fn main() {
@@ -147,7 +153,8 @@ pub async fn main() {
         }
     }))
     .help(&HELP)
-    .group(&FUN_GROUP);
+    .group(&FUN_GROUP)
+    .group(&MODERATION_GROUP);
 
 
     let mut client = Client::new_with_framework(&token, Handler, framework)

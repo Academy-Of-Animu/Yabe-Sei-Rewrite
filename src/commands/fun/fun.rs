@@ -16,7 +16,10 @@ use regex::Regex;
 #[description = "The `roll` command rolls a specified number of die with a specified number of sides."]
 #[usage = "<number of die> <sides per die>"]
 pub async fn roll(context: &mut Context, message: &Message, mut args: Args) -> CommandResult {
-    if args.rest().is_empty() {
+    let mut dice_input = args.single::<u32>();
+    let mut sides_input = args.single::<u32>();
+
+    if args.message().is_empty() || dice_input.is_err() || sides_input.is_err() {
         message.channel_id.send_message(&context, |msg| {
             msg.embed(|e| {
                 e.description("No possible rolls could be determined from that combination.");
@@ -26,8 +29,8 @@ pub async fn roll(context: &mut Context, message: &Message, mut args: Args) -> C
         return Ok(());
     }
 
-    let mut dice = args.single::<u32>().unwrap();
-    let mut sides = args.single::<u32>().unwrap();
+    let dice = dice_input.unwrap();
+    let sides = sides_input.unwrap();
 
     if dice > 15 || sides > 120 {
         message.channel_id.send_message(&context, |msg| {
@@ -121,7 +124,7 @@ pub async fn owofy(context: &mut Context, message: &Message, args: Args) -> Comm
 #[description = "Flips a coin (or coins)"]
 #[usage = "<number of coins> (leave empty for one coin"]
 pub async fn flip(context: &mut Context, message: &Message, mut args: Args) -> CommandResult {
-    if args.rest().is_empty() {
+    if args.message().is_empty() {
 
         let random = (rand::thread_rng().gen_range(1, 3) as f64).floor();
         let mut coin_side = String::with_capacity(6);
@@ -144,7 +147,19 @@ pub async fn flip(context: &mut Context, message: &Message, mut args: Args) -> C
         return Ok(());
     }
 
-    let coins = args.single::<u32>().unwrap();
+    let coins_input = args.single::<u32>();
+    if coins_input.is_err() {
+        message.channel_id.send_message(&context, |msg| {
+            msg.embed(|e| {
+                e.description("Please enter a number between 1 and 10 (inclusive)");
+                e.color(0x1355A4)
+            })
+        }).await;
+
+        return Ok(());
+    }
+
+    let coins = coins_input.unwrap();
 
     if coins < 1 || coins > 10 {
         message.channel_id.send_message(&context, |msg| {
@@ -192,4 +207,44 @@ pub async fn flip(context: &mut Context, message: &Message, mut args: Args) -> C
 
         Ok(())
     }
+}
+
+#[command]
+#[description = "Gives a totally ~~random~~ calculated answer to your question"]
+#[usage ="<question>"]
+#[aliases("8ball")]
+pub async fn eightball(context: &mut Context, message: &Message, args: Args) -> CommandResult {
+    if args.message().is_empty() {
+        message.channel_id.send_message(&context, |msg| {
+            msg.embed(|e| {
+                e.description("Give me a question to predict the answer for!");
+                e.color(0x1355A4)
+            })
+        }).await;
+
+        return Ok(());
+    }
+
+    let answers = vec![
+        "That is it chief.", "Can I get an amen?", "OwO", "UwU", "Indede, it is so.", "Mmm, yes.",
+        "YES!!!!", "Yeah, why not.", "Only if you say please.",
+
+        "Ask canarado.", "I guess??", "With the way things are, who knows?", "¯\\_(ツ)_/¯", "Not enough info...",
+        "I don't want to answer that.", "How would I know that?", "You might wanna reconsider your life choices.",
+        "How about you watch anime instead of asking me questions.", "Maybe.", "If you pray hard enough.",
+
+        "This is not it chief.", "That is a no from me chief.", "Leave me alone, I am tired.", "Turn the simp down a notch and I'll answer ya.",
+        "Are you...serious?", "How about you shut up.", "Simply put, no.", "Not going to happen.", "Ask again later.", "Pffft."
+    ];
+
+    let answer = answers[(rand::random::<f64>() * answers.len() as f64).floor() as usize];
+
+    message.channel_id.send_message(&context, |msg| {
+        msg.embed(|e| {
+            e.description(answer);
+            e.color(0x1355A4)
+        })
+    }).await;
+
+    Ok(())
 }
