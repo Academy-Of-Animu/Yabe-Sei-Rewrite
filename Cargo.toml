@@ -16,3 +16,4 @@ log = "0.4.8"
 rusqlite = { version = "0.21.0", features = ["bundled"] }
 rand = "0.7.3"
 regex = "1"
+tokio = "0.2.13"
