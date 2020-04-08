@@ -1,5 +1,5 @@
-#![allow(unused_imports, unused_variables, unused_mut, unused_attributes, unused_parens,)]
-#![feature(type_ascription)]
+#![allow(unused_imports, unused_variables, unused_mut, unused_attributes, unused_parens, irrefutable_let_patterns, unused_must_use,)]
+#![feature(type_ascription, box_into_pin)]
 
 mod util;
 mod listeners;
@@ -22,11 +22,10 @@ use serenity::{
         },
         StandardFramework,
     },
-    prelude::{
-        Mutex,
-        TypeMapKey,
-    }
+    prelude::*
 };
+
+use tokio::sync::Mutex;
 
 use log::error;
 
@@ -60,8 +59,11 @@ impl TypeMapKey for ShardManagerContainer {
 #[commands(roll, owofy, flip)]
 struct Fun;
 
+#[tokio::main]
 pub async fn main() {
     let token = dotenv!("TOKEN");
+
+    new_database();
 
     let http = Http::new_with_token(&token);
 
@@ -83,19 +85,23 @@ pub async fn main() {
         .case_insensitivity(true)
         .on_mention(Some(bot_id))
         .owners(owners)
-        .dynamic_prefix(|_, message| {
+        .dynamic_prefix(|_, message| Box::pin(async move {
             let default = "yabe".to_string();
 
-            if dotenv!("PROD") == "1" { Some("yabedev".to_string());};
+            // if dotenv!("PROD") == "1" { "yabedev".to_string() };
+
+            if dotenv!("PROD") == "0" {
+                return Some("yabedev".to_string());
+            }
 
             if let guild_id = message.guild_id {
-                get_prefix(guild_id).map_or_else(|_| default, |prefix| prefix)
+                Some(get_prefix(guild_id.unwrap()).map_or_else(|_| default, |prefix| prefix))
             } else {
                 Some(default)
             }
-        })
+        }))
     })
-    .on_dispatch_error(|context, message, err| match err {
+    .on_dispatch_error(|context, message, err| Box::pin(async move { match err {
         DispatchError::Ratelimited(secs) => {
             let _ = message.channel_id.say(
                 &context,
@@ -133,13 +139,13 @@ pub async fn main() {
         }
         DispatchError::IgnoredBot => {}
         _ => error!("Dispatch Error: {} Failed: {:?}", message.content, err)
-    })
-    .after(|context, message, command_name, err| {
+    }}))
+    .after(|context, message, command_name, err| Box::pin(async move {
         if let Err(e) = err {
             let _ = message.channel_id.say(&context, "Something went wrong running that command. Try again?");
             error!("Encountered issue while running {} command\nUser: {}\nE: {:?}", command_name, message.author.tag(), e);
         }
-    })
+    }))
     .help(&HELP)
     .group(&FUN_GROUP);
 
@@ -153,13 +159,7 @@ pub async fn main() {
         data.insert::<ShardManagerContainer>(Arc::clone(&client.shard_manager));
     }
 
-
-    new_database();
-
-
-
-
-    if let Err(e) = client.start_autosharded() {
+    if let Err(e) = client.start_shards(1).await {
         error!("Could not run the client: {:?}", e);
     }
 }
