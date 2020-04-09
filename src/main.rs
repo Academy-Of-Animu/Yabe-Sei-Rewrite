@@ -9,6 +9,7 @@ mod commands;
 use commands::fun::fun::*;
 use commands::util::help::*;
 use commands::moderation::moderation::*;
+use commands::info::info::*;
 
 use serenity::{
     http::Http,
@@ -64,6 +65,11 @@ struct Fun;
 #[description = "Moderation commands."]
 #[commands(ban)]
 struct Moderation;
+
+#[group]
+#[description = "Information commands."]
+#[commands(info)]
+struct Info;
 
 #[tokio::main]
 pub async fn main() {
@@ -154,7 +160,8 @@ pub async fn main() {
     }))
     .help(&HELP)
     .group(&FUN_GROUP)
-    .group(&MODERATION_GROUP);
+    .group(&MODERATION_GROUP)
+    .group(&INFO_GROUP);
 
 
     let mut client = Client::new_with_framework(&token, Handler, framework)
